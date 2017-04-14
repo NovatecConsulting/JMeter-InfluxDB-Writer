@@ -42,5 +42,10 @@ public interface RequestMeasurement {
 		 * Error count field.
 		 */
 		String ERROR_COUNT = "errorCount";
+
+		/**
+		 * Node name field
+		 */
+		String NODE_NAME = "nodeName";
 	}
 }
