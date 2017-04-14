@@ -43,5 +43,10 @@ public interface VirtualUsersMeasurement {
 		 * Finished threads field.
 		 */
 		String FINISHED_THREADS = "finishedThreads";
+
+		/**
+		 * Node name field.
+		 */
+		String NODE_NAME = "nodeName";
 	}
 }

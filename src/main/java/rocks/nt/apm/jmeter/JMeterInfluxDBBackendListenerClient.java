@@ -43,6 +43,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 */
 	private static final String KEY_USE_REGEX_FOR_SAMPLER_LIST = "useRegexForSamplerList";
 	private static final String KEY_TEST_NAME = "testName";
+	private static final String KEY_NODE_NAME = "nodeName";
 	private static final String KEY_SAMPLERS_LIST = "samplersList";
 
 	/**
@@ -60,6 +61,11 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 * Name of the test.
 	 */
 	private String testName;
+
+	/**
+	 * Name of the name
+	 */
+	private String nodeName;
 
 	/**
 	 * List of samplers to record.
@@ -103,6 +109,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
 						.addField(RequestMeasurement.Fields.TEST_NAME, testName)
+						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
 						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
 				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
 			}
@@ -113,6 +120,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	public Arguments getDefaultParameters() {
 		Arguments arguments = new Arguments();
 		arguments.addArgument(KEY_TEST_NAME, "Test");
+		arguments.addArgument(KEY_NODE_NAME, "Test-Node");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_HOST, "localhost");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PORT, Integer.toString(InfluxDBConfig.DEFAULT_PORT));
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "jmeter");
@@ -128,13 +136,17 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	public void setupTest(BackendListenerContext context) throws Exception {
 		testName = context.getParameter(KEY_TEST_NAME, "Test");
 		randomNumberGenerator = new Random();
+		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
+
 
 		setupInfluxClient(context);
 		influxDB.write(
 				influxDBConfig.getInfluxDatabase(),
 				influxDBConfig.getInfluxRetentionPolicy(),
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED).addField(TestStartEndMeasurement.Fields.TEST_NAME, testName).build());
+						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED)
+						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
+						.addField(TestStartEndMeasurement.Fields.NODE_NAME, nodeName).build());
 
 		parseSamplers(context);
 		scheduler = Executors.newScheduledThreadPool(1);
@@ -152,7 +164,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				influxDBConfig.getInfluxDatabase(),
 				influxDBConfig.getInfluxRetentionPolicy(),
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED).addField(TestStartEndMeasurement.Fields.TEST_NAME, testName).build());
+						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED)
+						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
+						.addField(TestStartEndMeasurement.Fields.NODE_NAME, nodeName).build());
 
 		influxDB.disableBatch();
 		try {
@@ -222,6 +236,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		builder.addField(VirtualUsersMeasurement.Fields.MEAN_ACTIVE_THREADS, meanActiveThreads);
 		builder.addField(VirtualUsersMeasurement.Fields.STARTED_THREADS, startedThreads);
 		builder.addField(VirtualUsersMeasurement.Fields.FINISHED_THREADS, finishedThreads);
+		builder.addField(VirtualUsersMeasurement.Fields.NODE_NAME, nodeName);
 		influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), builder.build());
 	}
 
