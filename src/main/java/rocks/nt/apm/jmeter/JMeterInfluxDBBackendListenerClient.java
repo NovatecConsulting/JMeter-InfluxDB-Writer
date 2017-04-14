@@ -3,6 +3,7 @@ package rocks.nt.apm.jmeter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -49,6 +50,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 * Constants.
 	 */
 	private static final String SEPARATOR = ";";
+	private static final int ONE_MS_IN_NANOSECONDS = 1000000;
 
 	/**
 	 * Scheduler for periodic metric aggregation.
@@ -91,6 +93,11 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	private InfluxDB influxDB;
 
 	/**
+	 * Random number generator
+	 */
+	private Random randomNumberGenerator;
+
+	/**
 	 * Processes sampler results.
 	 */
 	public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
@@ -98,8 +105,10 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 			getUserMetrics().add(sampleResult);
 
 			if ((null != regexForSamplerList && sampleResult.getSampleLabel().matches(regexForSamplerList)) || samplersToFilter.contains(sampleResult.getSampleLabel())) {
-				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
 						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
+						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
+						.addField(RequestMeasurement.Fields.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
 						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
 				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
@@ -126,7 +135,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	@Override
 	public void setupTest(BackendListenerContext context) throws Exception {
 		testName = context.getParameter(KEY_TEST_NAME, "Test");
+		randomNumberGenerator = new Random();
 		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
+
 
 		setupInfluxClient(context);
 		influxDB.write(
@@ -237,5 +248,12 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		if (!dbNames.contains(influxDBConfig.getInfluxDatabase())) {
 			influxDB.createDatabase(influxDBConfig.getInfluxDatabase());
 		}
+	}
+
+	/**
+	 * Try to get a unique number for the sampler thread
+	 */
+	private int getUniqueNumberForTheSamplerThread() {
+		return randomNumberGenerator.nextInt(ONE_MS_IN_NANOSECONDS);
 	}
 }
