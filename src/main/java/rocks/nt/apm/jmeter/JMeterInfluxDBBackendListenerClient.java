@@ -102,6 +102,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
 						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
+						.addField(RequestMeasurement.Fields.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
 				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
 			}

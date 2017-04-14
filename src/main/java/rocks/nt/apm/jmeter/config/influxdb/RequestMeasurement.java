@@ -47,5 +47,10 @@ public interface RequestMeasurement {
 		 * Thread name field
 		 */
 		String THREAD_NAME = "threadName";
+
+		/**
+		 * Test name field
+		 */
+		String TEST_NAME = "testName";
 	}
 }
