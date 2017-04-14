@@ -42,5 +42,10 @@ public interface RequestMeasurement {
 		 * Error count field.
 		 */
 		String ERROR_COUNT = "errorCount";
+
+		/**
+		 * Thread name field
+		 */
+		String THREAD_NAME = "threadName";
 	}
 }
