@@ -53,6 +53,7 @@ public interface RequestMeasurement {
 		 */
 		String TEST_NAME = "testName";
 
+		/**
 		 * Node name field
 		 */
 		String NODE_NAME = "nodeName";
