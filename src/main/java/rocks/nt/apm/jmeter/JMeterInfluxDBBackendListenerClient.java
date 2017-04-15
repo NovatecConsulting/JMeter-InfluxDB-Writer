@@ -145,8 +145,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				influxDBConfig.getInfluxRetentionPolicy(),
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED)
+						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
 						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
-						.addField(TestStartEndMeasurement.Fields.NODE_NAME, nodeName).build());
+						.build());
 
 		parseSamplers(context);
 		scheduler = Executors.newScheduledThreadPool(1);
@@ -165,8 +166,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				influxDBConfig.getInfluxRetentionPolicy(),
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED)
+						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
 						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
-						.addField(TestStartEndMeasurement.Fields.NODE_NAME, nodeName).build());
+						.build());
 
 		influxDB.disableBatch();
 		try {
@@ -236,7 +238,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		builder.addField(VirtualUsersMeasurement.Fields.MEAN_ACTIVE_THREADS, meanActiveThreads);
 		builder.addField(VirtualUsersMeasurement.Fields.STARTED_THREADS, startedThreads);
 		builder.addField(VirtualUsersMeasurement.Fields.FINISHED_THREADS, finishedThreads);
-		builder.addField(VirtualUsersMeasurement.Fields.NODE_NAME, nodeName);
+		builder.tag(VirtualUsersMeasurement.Tags.NODE_NAME, nodeName);
 		influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), builder.build());
 	}
 
