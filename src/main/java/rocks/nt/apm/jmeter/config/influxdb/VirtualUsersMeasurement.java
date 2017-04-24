@@ -14,6 +14,19 @@ public interface VirtualUsersMeasurement {
 	String MEASUREMENT_NAME = "virtualUsers";
 
 	/**
+	 * Tags.
+	 * 
+	 * @author Alexander Wert
+	 *
+	 */
+	public interface Tags {
+		/**
+		 * Node name field
+		 */
+		String NODE_NAME = "nodeName";
+	}
+
+	/**
 	 * Fields.
 	 * 
 	 * @author Alexander Wert
@@ -43,10 +56,5 @@ public interface VirtualUsersMeasurement {
 		 * Finished threads field.
 		 */
 		String FINISHED_THREADS = "finishedThreads";
-
-		/**
-		 * Node name field.
-		 */
-		String NODE_NAME = "nodeName";
 	}
 }
