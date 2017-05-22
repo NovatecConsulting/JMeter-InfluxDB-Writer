@@ -118,7 +118,7 @@ public class JMeterInfluxDBImportFileClient extends AbstractBackendListenerClien
 
 		File exportFile = new File(context.getParameter(KEY_FILE_PATH, "influxDBExport.txt"));
 
-		if (!exportFile.getParentFile().exists()) {
+		if (exportFile.getParentFile() != null && !exportFile.getParentFile().exists()) {
 			exportFile.getParentFile().mkdirs();
 		}
 
