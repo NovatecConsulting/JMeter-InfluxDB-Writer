@@ -1,5 +1,6 @@
 package rocks.nt.apm.jmeter;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	private static final String KEY_TEST_NAME = "testName";
 	private static final String KEY_NODE_NAME = "nodeName";
 	private static final String KEY_SAMPLERS_LIST = "samplersList";
+	private static final String KEY_RECORD_SUB_SAMPLES = "recordSubSamples";
 
 	/**
 	 * Constants.
@@ -98,15 +100,34 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	private Random randomNumberGenerator;
 
 	/**
+	 * Indicates whether to record Subsamples
+	 */
+	private boolean recordSubSamples;
+
+	/**
 	 * Processes sampler results.
 	 */
 	public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
+		// Gather all the listeners
+		List<SampleResult> allSampleResults = new ArrayList<SampleResult>();
 		for (SampleResult sampleResult : sampleResults) {
-			getUserMetrics().add(sampleResult);
+            allSampleResults.add(sampleResult);
+
+            if(recordSubSamples) {
+				for (SampleResult subResult : sampleResult.getSubResults()) {
+					allSampleResults.add(subResult);
+				}
+			}
+        }
+
+		for(SampleResult sampleResult: allSampleResults) {
+            getUserMetrics().add(sampleResult);
 
 			if ((null != regexForSamplerList && sampleResult.getSampleLabel().matches(regexForSamplerList)) || samplersToFilter.contains(sampleResult.getSampleLabel())) {
-				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
-						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
+				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(
+						System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
+						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(
+								RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
 						.addField(RequestMeasurement.Fields.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
@@ -123,12 +144,13 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		arguments.addArgument(KEY_NODE_NAME, "Test-Node");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_HOST, "localhost");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PORT, Integer.toString(InfluxDBConfig.DEFAULT_PORT));
-		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "jmeter");
+		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PASSWORD, "");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_DATABASE, InfluxDBConfig.DEFAULT_DATABASE);
 		arguments.addArgument(InfluxDBConfig.KEY_RETENTION_POLICY, InfluxDBConfig.DEFAULT_RETENTION_POLICY);
 		arguments.addArgument(KEY_SAMPLERS_LIST, ".*");
 		arguments.addArgument(KEY_USE_REGEX_FOR_SAMPLER_LIST, "true");
+		arguments.addArgument(KEY_RECORD_SUB_SAMPLES, "true");
 		return arguments;
 	}
 
@@ -153,6 +175,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		scheduler = Executors.newScheduledThreadPool(1);
 
 		scheduler.scheduleAtFixedRate(this, 1, 1, TimeUnit.SECONDS);
+
+		// Indicates whether to write sub sample records to the database
+		recordSubSamples = Boolean.parseBoolean(context.getParameter(KEY_RECORD_SUB_SAMPLES, "false"));
 	}
 
 	@Override
