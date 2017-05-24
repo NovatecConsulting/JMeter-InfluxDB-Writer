@@ -108,10 +108,6 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 * Processes sampler results.
 	 */
 	public void handleSampleResults(List<SampleResult> sampleResults, BackendListenerContext context) {
-
-		// Indicates whether to write sub sample records to the database
-		recordSubSamples = Boolean.parseBoolean(context.getParameter(KEY_RECORD_SUB_SAMPLES, "false"));
-
 		// Gather all the listeners
 		List<SampleResult> allSampleResults = new ArrayList<SampleResult>();
 		for (SampleResult sampleResult : sampleResults) {
@@ -180,8 +176,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 
 		scheduler.scheduleAtFixedRate(this, 1, 1, TimeUnit.SECONDS);
 
-		// By default don't record subsamples
-		recordSubSamples = false;
+		// Indicates whether to write sub sample records to the database
+		recordSubSamples = Boolean.parseBoolean(context.getParameter(KEY_RECORD_SUB_SAMPLES, "false"));
 	}
 
 	@Override
