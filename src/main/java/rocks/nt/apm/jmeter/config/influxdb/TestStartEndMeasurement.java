@@ -29,6 +29,16 @@ public interface TestStartEndMeasurement {
 		 * Node name field
 		 */
 		String NODE_NAME = "nodeName";
+
+                /** 
+                 * tag use for a unique id for this particular execution (aka 'run') of a load test.
+                 */  
+                String RUN_ID = "runId";
+
+                /** 
+                 * Test name field.
+                 */  
+                String TEST_NAME = "testName";
 	}
 	
 	/**
@@ -41,7 +51,7 @@ public interface TestStartEndMeasurement {
 		/**
 		 * Test name field.
 		 */
-		String TEST_NAME = "testName";
+		String PLACEHOLDER = "placeholder";
 	}
 	
 	/**
