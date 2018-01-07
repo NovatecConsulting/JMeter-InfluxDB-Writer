@@ -179,7 +179,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED)
 						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
 						.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
-						.addField("1", "1")
+						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER, "1")
 						.build());
 
 		parseSamplers(context);
