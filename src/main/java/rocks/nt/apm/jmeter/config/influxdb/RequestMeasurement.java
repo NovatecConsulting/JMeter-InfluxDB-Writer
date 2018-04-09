@@ -24,6 +24,16 @@ public interface RequestMeasurement {
 		 * Request name tag.
 		 */
 		String REQUEST_NAME = "requestName";
+
+                /** 
+                 * Influx DB tag for a unique identifier for each execution(aka 'run') of a load test.
+                 */  
+                String RUN_ID = "runId";
+
+                /** 
+                 * Test name field
+                 */  
+                String TEST_NAME = "testName";
 	}
 
 	/**
@@ -47,11 +57,6 @@ public interface RequestMeasurement {
 		 * Thread name field
 		 */
 		String THREAD_NAME = "threadName";
-
-		/**
-		 * Test name field
-		 */
-		String TEST_NAME = "testName";
 
 		/**
 		 * Node name field

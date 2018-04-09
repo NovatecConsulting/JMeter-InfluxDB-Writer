@@ -44,6 +44,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 */
 	private static final String KEY_USE_REGEX_FOR_SAMPLER_LIST = "useRegexForSamplerList";
 	private static final String KEY_TEST_NAME = "testName";
+	private static final String KEY_RUN_ID = "runId";
 	private static final String KEY_NODE_NAME = "nodeName";
 	private static final String KEY_SAMPLERS_LIST = "samplersList";
 	private static final String KEY_RECORD_SUB_SAMPLES = "recordSubSamples";
@@ -63,6 +64,12 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 * Name of the test.
 	 */
 	private String testName;
+
+        /** 
+         * A unique identifier for a single execution (aka 'run') of a load test.
+         * In a CI/CD automated performance test, a Jenkins or Bamboo build id would be a good value for this.
+         */  
+        private String runId;
 
 	/**
 	 * Name of the name
@@ -126,10 +133,11 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 			if ((null != regexForSamplerList && sampleResult.getSampleLabel().matches(regexForSamplerList)) || samplersToFilter.contains(sampleResult.getSampleLabel())) {
 				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(
 						System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
-						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel()).addField(
-								RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
+						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel())
+                                                .addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
-						.addField(RequestMeasurement.Fields.TEST_NAME, testName)
+						.tag(RequestMeasurement.Tags.RUN_ID, runId)
+						.tag(RequestMeasurement.Tags.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
 						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
 				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
@@ -142,6 +150,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		Arguments arguments = new Arguments();
 		arguments.addArgument(KEY_TEST_NAME, "Test");
 		arguments.addArgument(KEY_NODE_NAME, "Test-Node");
+		arguments.addArgument(KEY_RUN_ID, "R001");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_HOST, "localhost");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PORT, Integer.toString(InfluxDBConfig.DEFAULT_PORT));
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "");
@@ -157,6 +166,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	@Override
 	public void setupTest(BackendListenerContext context) throws Exception {
 		testName = context.getParameter(KEY_TEST_NAME, "Test");
+                runId = context.getParameter(KEY_RUN_ID,"R001"); //Will be used to compare performance of R001, R002, etc of 'Test'
 		randomNumberGenerator = new Random();
 		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
 
@@ -168,7 +178,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED)
 						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
-						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
+						.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
+						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER, "1")
 						.build());
 
 		parseSamplers(context);
@@ -192,7 +203,9 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED)
 						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
-						.addField(TestStartEndMeasurement.Fields.TEST_NAME, testName)
+						.tag(TestStartEndMeasurement.Tags.RUN_ID, runId)
+						.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
+						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER,"1")
 						.build());
 
 		influxDB.disableBatch();
@@ -264,6 +277,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		builder.addField(VirtualUsersMeasurement.Fields.STARTED_THREADS, startedThreads);
 		builder.addField(VirtualUsersMeasurement.Fields.FINISHED_THREADS, finishedThreads);
 		builder.tag(VirtualUsersMeasurement.Tags.NODE_NAME, nodeName);
+		builder.tag(VirtualUsersMeasurement.Tags.TEST_NAME, testName);
+		builder.tag(VirtualUsersMeasurement.Tags.RUN_ID, runId);
 		influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), builder.build());
 	}
 

@@ -133,7 +133,7 @@ public class JMeterInfluxDBImportFileClient extends AbstractBackendListenerClien
 		exportFileWriter = new BufferedWriter(new FileWriter(exportFile));
 
 		Point startPoint = Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-				.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED).addField(TestStartEndMeasurement.Fields.TEST_NAME, testName).build();
+				.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED).tag(TestStartEndMeasurement.Tags.TEST_NAME, testName).build();
 		exportFileWriter.append(startPoint.lineProtocol());
 		exportFileWriter.newLine();
 
@@ -150,7 +150,7 @@ public class JMeterInfluxDBImportFileClient extends AbstractBackendListenerClien
 
 		addVirtualUsersMetrics(0, 0, 0, 0, JMeterContextService.getThreadCounts().finishedThreads);
 		Point endPoint = Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-				.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED).addField(TestStartEndMeasurement.Fields.TEST_NAME, testName).build();
+				.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.FINISHED).tag(TestStartEndMeasurement.Tags.TEST_NAME, testName).build();
 
 		exportFileWriter.append(endPoint.lineProtocol());
 		exportFileWriter.newLine();
