@@ -22,7 +22,7 @@ public class InfluxDBConfig {
 	public static final String DEFAULT_RETENTION_POLICY = "autogen";
 
 	/**
-	 * Default retention policy name.
+	 * Default http scheme name.
 	 */
 	public static final String DEFAULT_HTTP_SCHEME = "http";
 	
@@ -134,7 +134,7 @@ public class InfluxDBConfig {
 			influxRetentionPolicy = DEFAULT_HTTP_SCHEME;
 		}
 		// TODO: no checks but should be only "http" and "https"
-		setInfluxRetentionPolicy(influxHTTPScheme);
+		setInfluxHTTPScheme(influxHTTPScheme);
 	}
 
 	/**
