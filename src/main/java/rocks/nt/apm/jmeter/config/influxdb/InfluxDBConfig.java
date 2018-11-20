@@ -222,6 +222,14 @@ public class InfluxDBConfig {
 	}
 
 	/**
+	 * @param influxHTTPScheme
+	 *            the influxHTTPScheme to set
+	 */
+	public void setInfluxHTTPScheme(String influxHTTPScheme) {
+		this.influxHTTPScheme = influxHTTPScheme;
+	}
+
+	/**
 	 * @return the influxDBPort
 	 */
 	public int getInfluxDBPort() {
