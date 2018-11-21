@@ -131,7 +131,7 @@ public class InfluxDBConfig {
 		
 		String influxHTTPScheme = context.getParameter(KEY_HTTP_SCHEME, DEFAULT_HTTP_SCHEME);
 		if (StringUtils.isEmpty(influxHTTPScheme)) {
-			influxRetentionPolicy = DEFAULT_HTTP_SCHEME;
+			influxHTTPScheme = DEFAULT_HTTP_SCHEME;
 		}
 		// TODO: no checks but should be only "http" and "https"
 		setInfluxHTTPScheme(influxHTTPScheme);
