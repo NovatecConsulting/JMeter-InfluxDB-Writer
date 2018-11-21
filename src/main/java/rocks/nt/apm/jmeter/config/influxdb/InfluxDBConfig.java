@@ -22,6 +22,11 @@ public class InfluxDBConfig {
 	public static final String DEFAULT_RETENTION_POLICY = "autogen";
 
 	/**
+	 * Default http scheme name.
+	 */
+	public static final String DEFAULT_HTTP_SCHEME = "http";
+	
+	/**
 	 * Default port.
 	 */
 	public static final int DEFAULT_PORT = 8086;
@@ -55,6 +60,11 @@ public class InfluxDBConfig {
 	 * Config key for retention policy name.
 	 */
 	public static final String KEY_RETENTION_POLICY = "retentionPolicy";
+	
+	/**
+	 * Config key for http scheme.
+	 */
+	public static final String KEY_HTTP_SCHEME = "influxHTTPScheme";
 
 	/**
 	 * InfluxDB Host.
@@ -85,6 +95,11 @@ public class InfluxDBConfig {
 	 * InfluxDB Port.
 	 */
 	private int influxDBPort;
+	
+	/**
+	 * InfluxDB database retention policy.
+	 */
+	private String influxHTTPScheme;
 
 	public InfluxDBConfig(BackendListenerContext context) {
 		String influxDBHost = context.getParameter(KEY_INFLUX_DB_HOST);
@@ -113,6 +128,13 @@ public class InfluxDBConfig {
 			influxRetentionPolicy = DEFAULT_RETENTION_POLICY;
 		}
 		setInfluxRetentionPolicy(influxRetentionPolicy);
+		
+		String influxHTTPScheme = context.getParameter(KEY_HTTP_SCHEME, DEFAULT_HTTP_SCHEME);
+		if (StringUtils.isEmpty(influxHTTPScheme)) {
+			influxHTTPScheme = DEFAULT_HTTP_SCHEME;
+		}
+		// TODO: no checks but should be only "http" and "https"
+		setInfluxHTTPScheme(influxHTTPScheme);
 	}
 
 	/**
@@ -121,7 +143,7 @@ public class InfluxDBConfig {
 	 * @return influxDB URL.
 	 */
 	public String getInfluxDBURL() {
-		return "http://" + influxDBHost + ":" + influxDBPort;
+		return influxHTTPScheme + "://" + influxDBHost + ":" + influxDBPort;
 	}
 
 	/**
@@ -197,6 +219,14 @@ public class InfluxDBConfig {
 	 */
 	public void setInfluxRetentionPolicy(String influxRetentionPolicy) {
 		this.influxRetentionPolicy = influxRetentionPolicy;
+	}
+
+	/**
+	 * @param influxHTTPScheme
+	 *            the influxHTTPScheme to set
+	 */
+	public void setInfluxHTTPScheme(String influxHTTPScheme) {
+		this.influxHTTPScheme = influxHTTPScheme;
 	}
 
 	/**
