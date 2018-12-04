@@ -1,14 +1,5 @@
 package rocks.nt.apm.jmeter;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.threads.JMeterContextService;
@@ -21,17 +12,20 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.Point;
 import org.influxdb.dto.Point.Builder;
-
 import rocks.nt.apm.jmeter.config.influxdb.InfluxDBConfig;
 import rocks.nt.apm.jmeter.config.influxdb.RequestMeasurement;
 import rocks.nt.apm.jmeter.config.influxdb.TestStartEndMeasurement;
 import rocks.nt.apm.jmeter.config.influxdb.VirtualUsersMeasurement;
 
+import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
 /**
  * Backend listener that writes JMeter metrics to influxDB directly.
- * 
- * @author Alexander Wert
  *
+ * @author Alexander Wert
  */
 public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListenerClient implements Runnable {
 	/**
@@ -45,6 +39,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	private static final String KEY_USE_REGEX_FOR_SAMPLER_LIST = "useRegexForSamplerList";
 	private static final String KEY_TEST_NAME = "testName";
 	private static final String KEY_RUN_ID = "runId";
+	private static final String KEY_TAGS_LISTING = "optionalTags";
 	private static final String KEY_NODE_NAME = "nodeName";
 	private static final String KEY_SAMPLERS_LIST = "samplersList";
 	private static final String KEY_RECORD_SUB_SAMPLES = "recordSubSamples";
@@ -65,16 +60,22 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 */
 	private String testName;
 
-        /** 
-         * A unique identifier for a single execution (aka 'run') of a load test.
-         * In a CI/CD automated performance test, a Jenkins or Bamboo build id would be a good value for this.
-         */  
-        private String runId;
+	/**
+	 * A unique identifier for a single execution (aka 'run') of a load test.
+	 * In a CI/CD automated performance test, a Jenkins or Bamboo build id would be a good value for this.
+	 */
+	private String runId;
 
 	/**
-	 * Name of the name
+	 * Name of the node. It could be for ex. a name or IP-address of a specific server where the tests run.
 	 */
 	private String nodeName;
+
+	/**
+	 * Contains an optional list of tags to be recorded in the InfluxDB. Each tag entry is a pair [TAG_NAME]=[TAG_VALUE].
+	 * Delimiter is comma (,) colon (:) or semicolon (;).
+	 */
+	private String tagsListing;
 
 	/**
 	 * List of samplers to record.
@@ -107,7 +108,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	private Random randomNumberGenerator;
 
 	/**
-	 * Indicates whether to record Subsamples
+	 * Indicates whether to record Sub-samples
 	 */
 	private boolean recordSubSamples;
 
@@ -118,29 +119,31 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		// Gather all the listeners
 		List<SampleResult> allSampleResults = new ArrayList<SampleResult>();
 		for (SampleResult sampleResult : sampleResults) {
-            allSampleResults.add(sampleResult);
+			allSampleResults.add(sampleResult);
 
-            if(recordSubSamples) {
+			if (recordSubSamples) {
 				for (SampleResult subResult : sampleResult.getSubResults()) {
 					allSampleResults.add(subResult);
 				}
 			}
-        }
+		}
 
-		for(SampleResult sampleResult: allSampleResults) {
-            getUserMetrics().add(sampleResult);
+		for (SampleResult sampleResult : allSampleResults) {
+			getUserMetrics().add(sampleResult);
 
 			if ((null != regexForSamplerList && sampleResult.getSampleLabel().matches(regexForSamplerList)) || samplersToFilter.contains(sampleResult.getSampleLabel())) {
-				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(
+				Map<String, String> tags = processOptionalTags(tagsListing);
+				Builder pointBuilder = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(
 						System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
 						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel())
-                                                .addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
+						.addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
 						.tag(RequestMeasurement.Tags.RUN_ID, runId)
 						.tag(RequestMeasurement.Tags.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
-						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
-				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
+						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime());
+				addOptionalTagsToPoint(pointBuilder, tags);
+				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), pointBuilder.build());
 			}
 		}
 	}
@@ -151,6 +154,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		arguments.addArgument(KEY_TEST_NAME, "Test");
 		arguments.addArgument(KEY_NODE_NAME, "Test-Node");
 		arguments.addArgument(KEY_RUN_ID, "R001");
+		arguments.addArgument(KEY_TAGS_LISTING, "");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_HOST, "localhost");
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_PORT, Integer.toString(InfluxDBConfig.DEFAULT_PORT));
 		arguments.addArgument(InfluxDBConfig.KEY_INFLUX_DB_USER, "");
@@ -166,10 +170,10 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	@Override
 	public void setupTest(BackendListenerContext context) throws Exception {
 		testName = context.getParameter(KEY_TEST_NAME, "Test");
-                runId = context.getParameter(KEY_RUN_ID,"R001"); //Will be used to compare performance of R001, R002, etc of 'Test'
+		runId = context.getParameter(KEY_RUN_ID, "R001"); //Will be used to compare performance of R001, R002, etc of 'Test'
 		randomNumberGenerator = new Random();
 		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
-
+		tagsListing = context.getParameter(KEY_TAGS_LISTING, "");
 
 		setupInfluxClient(context);
 		influxDB.write(
@@ -179,8 +183,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 						.tag(TestStartEndMeasurement.Tags.TYPE, TestStartEndMeasurement.Values.STARTED)
 						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
 						.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
-						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER, "1")
-						.build());
+						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER, "1").build());
 
 		parseSamplers(context);
 		scheduler = Executors.newScheduledThreadPool(1);
@@ -196,7 +199,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		LOGGER.info("Shutting down influxDB scheduler...");
 		scheduler.shutdown();
 
-		addVirtualUsersMetrics(0,0,0,0,JMeterContextService.getThreadCounts().finishedThreads);
+		addVirtualUsersMetrics(0, 0, 0, 0, JMeterContextService.getThreadCounts().finishedThreads);
 		influxDB.write(
 				influxDBConfig.getInfluxDatabase(),
 				influxDBConfig.getInfluxRetentionPolicy(),
@@ -205,7 +208,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 						.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
 						.tag(TestStartEndMeasurement.Tags.RUN_ID, runId)
 						.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
-						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER,"1")
+						.addField(TestStartEndMeasurement.Fields.PLACEHOLDER, "1")
 						.build());
 
 		influxDB.disableBatch();
@@ -234,9 +237,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 
 	/**
 	 * Setup influxDB client.
-	 * 
-	 * @param context
-	 *            {@link BackendListenerContext}.
+	 *
+	 * @param context {@link BackendListenerContext}.
 	 */
 	private void setupInfluxClient(BackendListenerContext context) {
 		influxDBConfig = new InfluxDBConfig(context);
@@ -247,9 +249,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 
 	/**
 	 * Parses list of samplers.
-	 * 
-	 * @param context
-	 *            {@link BackendListenerContext}.
+	 *
+	 * @param context {@link BackendListenerContext}.
 	 */
 	private void parseSamplers(BackendListenerContext context) {
 		samplersList = context.getParameter(KEY_SAMPLERS_LIST, "");
@@ -297,5 +298,46 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 	 */
 	private int getUniqueNumberForTheSamplerThread() {
 		return randomNumberGenerator.nextInt(ONE_MS_IN_NANOSECONDS);
+	}
+
+	/**
+	 * Splits a passed string to key-value pairs whereas a delimited by coma, colon or semicolon.
+	 * Whereas key is a tag to be recorded in the InfluxDB-database and value is its value.
+	 * For ex. "appVersion=4.1.11;testdataVersion=3.0" means that the InfluxDB gets two tags "appVersion" and "testdataVersion"
+	 * with values.
+	 *
+	 * @param listOfOptionalTags
+	 * @return a map object of [tag]-[value] pairs.
+	 */
+	private Map<String, String> processOptionalTags(String listOfOptionalTags) {
+		final String tagPairsDelimiterRegex = ",|;|:"; //"\\-|\\+"
+		final String keyValueDelimiterRegex = "=";
+		Map<String, String> result = new HashMap<>();
+		if (listOfOptionalTags == null)
+			return result;
+
+		String[] tags = listOfOptionalTags.split(tagPairsDelimiterRegex);
+		for (int i = 0; i < tags.length; i++) {
+			String[] singleTag = tags[i].split(keyValueDelimiterRegex);
+			if (singleTag.length == 2) {
+				result.put(singleTag[0].trim(), singleTag[1].trim());
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * If the argument "optionalTags" set in the JMeter-GUI contains some valid tag data then this data gets added
+	 * to the current measurement point.
+	 *
+	 * @param pointBuilder a measurement point object.
+	 * @param tags         a map of [tag]-[value] pairs.
+	 */
+	private void addOptionalTagsToPoint(Builder pointBuilder, Map<String, String> tags) {
+		Iterator it = tags.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, String> pair = (Map.Entry) it.next();
+			pointBuilder.tag(pair.getKey(), pair.getValue());
+		}
 	}
 }
