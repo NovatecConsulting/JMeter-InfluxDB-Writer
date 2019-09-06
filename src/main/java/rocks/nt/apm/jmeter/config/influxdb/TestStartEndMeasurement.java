@@ -1,73 +1,29 @@
 package rocks.nt.apm.jmeter.config.influxdb;
 
-/**
- * Constants (Tag, Field, Measurement) names for the measurement that denotes start and end points of a load test.
- * 
- * @author Alexander Wert
- *
- */
-public interface TestStartEndMeasurement {
-
-	/**
-	 * Measurement name.
-	 */
-	String MEASUREMENT_NAME = "testStartEnd";
-
-	/**
-	 * Tags.
-	 * 
-	 * @author Alexander Wert
-	 *
-	 */
-	public interface Tags {
-		/**
-		 * Start or End type tag.
-		 */
-		String TYPE = "type";
-
-		/**
-		 * Node name field
-		 */
-		String NODE_NAME = "nodeName";
-
-                /** 
-                 * tag use for a unique id for this particular execution (aka 'run') of a load test.
-                 */  
-                String RUN_ID = "runId";
-
-                /** 
-                 * Test name field.
-                 */  
-                String TEST_NAME = "testName";
-	}
-	
-	/**
-	 * Fields.
-	 * 
-	 * @author Alexander Wert
-	 *
-	 */
-	public interface Fields {	
-		/**
-		 * Test name field.
-		 */
-		String PLACEHOLDER = "placeholder";
-	}
-	
-	/**
-	 * Values.
-	 * 
-	 * @author Alexander Wert
-	 *
-	 */
-	public interface Values {
-		/**
-		 * Finished.
-		 */
-		String FINISHED = "finished";
-		/**
-		 * Started.
-		 */
-		String STARTED = "started";
-	}
+public abstract interface TestStartEndMeasurement
+{
+  public static final String MEASUREMENT_NAME = "testStartEnd";
+  
+  public static abstract interface Fields
+  {
+    public static final String TEST_NAME = "testName";
+  }
+  
+  public static abstract interface Tags
+  {
+    public static final String TYPE = "type";
+    public static final String NODE_NAME = "nodeName";
+  }
+  
+  public static abstract interface Values
+  {
+    public static final String FINISHED = "finished";
+    public static final String STARTED = "started";
+  }
 }
+
+
+/* Location:              D:\Work\Download\1\JMeter-InfluxDB-Writer-v-1.2_main_my\JMeter-InfluxDB-Writer-v-1.2_main_my.jar!\rocks\nt\apm\jmeter\config\influxdb\TestStartEndMeasurement.class
+ * Java compiler version: 7 (51.0)
+ * JD-Core Version:       0.7.1
+ */

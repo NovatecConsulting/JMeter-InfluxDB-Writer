@@ -1,66 +1,30 @@
 package rocks.nt.apm.jmeter.config.influxdb;
 
-/**
- * Constants (Tag, Field, Measurement) names for the requests measurement.
- * 
- * @author Alexander Wert
- *
- */
-public interface RequestMeasurement {
-
-	/**
-	 * Measurement name.
-	 */
-	String MEASUREMENT_NAME = "requestsRaw";
-
-	/**
-	 * Tags.
-	 * 
-	 * @author Alexander Wert
-	 *
-	 */
-	public interface Tags {
-		/**
-		 * Request name tag.
-		 */
-		String REQUEST_NAME = "requestName";
-
-                /** 
-                 * Influx DB tag for a unique identifier for each execution(aka 'run') of a load test.
-                 */  
-                String RUN_ID = "runId";
-
-                /** 
-                 * Test name field
-                 */  
-                String TEST_NAME = "testName";
-	}
-
-	/**
-	 * Fields.
-	 * 
-	 * @author Alexander Wert
-	 *
-	 */
-	public interface Fields {
-		/**
-		 * Response time field.
-		 */
-		String RESPONSE_TIME = "responseTime";
-
-		/**
-		 * Error count field.
-		 */
-		String ERROR_COUNT = "errorCount";
-
-		/**
-		 * Thread name field
-		 */
-		String THREAD_NAME = "threadName";
-
-		/**
-		 * Node name field
-		 */
-		String NODE_NAME = "nodeName";
-	}
+public abstract interface RequestMeasurement
+{
+  public static final String MEASUREMENT_NAME = "requestsRaw";
+  
+  public static abstract interface Fields
+  {
+    public static final String RESPONSE_TIME = "responseTime";
+    public static final String RESPONSE_BYTES = "responseBytes";
+    public static final String RESPONSE_LATENCY = "responseLatency";
+    public static final String REQUEST_CONNECT = "connectTime";
+    public static final String RESPONSE_CODE = "responseCode";
+    public static final String ERROR_COUNT = "errorCount";
+    public static final String THREAD_NAME = "threadName";
+    public static final String TEST_NAME = "testName";
+    public static final String NODE_NAME = "nodeName";
+  }
+  
+  public static abstract interface Tags
+  {
+    public static final String REQUEST_NAME = "requestName";
+  }
 }
+
+
+/* Location:              D:\Work\Download\1\JMeter-InfluxDB-Writer-v-1.2_main_my\JMeter-InfluxDB-Writer-v-1.2_main_my.jar!\rocks\nt\apm\jmeter\config\influxdb\RequestMeasurement.class
+ * Java compiler version: 7 (51.0)
+ * JD-Core Version:       0.7.1
+ */
