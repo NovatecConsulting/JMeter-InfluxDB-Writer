@@ -9,6 +9,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.jmeter.threads.JMeterContext;
+import org.apache.jmeter.threads.AbstractThreadGroup;
+import org.apache.jmeter.testelement.AbstractTestElement;
+import org.apache.jmeter.util.JMeterUtils;
+
 import org.apache.jmeter.config.Arguments;
 import org.apache.jmeter.samplers.SampleResult;
 import org.apache.jmeter.threads.JMeterContextService;
@@ -69,7 +74,10 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
          * A unique identifier for a single execution (aka 'run') of a load test.
          * In a CI/CD automated performance test, a Jenkins or Bamboo build id would be a good value for this.
          */  
-        private String runId;
+		private String runId;
+		
+	String old_tg_name;
+	int old_tg_number = 0;
 
 	/**
 	 * Name of the name
@@ -173,7 +181,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
                 runId = context.getParameter(KEY_RUN_ID,"R001"); //Will be used to compare performance of R001, R002, etc of 'Test'
 		randomNumberGenerator = new Random();
 		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
-
+		
 		setupInfluxClient(context);
 		influxDB.write(
 				influxDBConfig.getInfluxDatabase(),
@@ -230,6 +238,28 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		try {
 			ThreadCounts tc = JMeterContextService.getThreadCounts();
 			addVirtualUsersMetrics(getUserMetrics().getMinActiveThreads(), getUserMetrics().getMeanActiveThreads(), getUserMetrics().getMaxActiveThreads(), tc.startedThreads, tc.finishedThreads);
+			//check status of thread group
+			//AbstractThreadGroup threadGroup = JMeterContextService.getContext().getThreadGroup();
+			String tg_name = JMeterUtils.getProperty("tg_name");
+			int tg_number = Integer.valueOf(JMeterUtils.getProperty("tg_number"));
+			
+			if (!tg_name.equals(old_tg_name) && tg_number > old_tg_number)
+			{
+				influxDB.write(
+					influxDBConfig.getInfluxDatabase(),
+					influxDBConfig.getInfluxRetentionPolicy(),
+					Point.measurement(TestStartEndMeasurement.MEASUREMENT_NAME).time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+							.tag(TestStartEndMeasurement.Tags.TYPE, tg_name.concat("_started"))
+							.tag(TestStartEndMeasurement.Tags.NODE_NAME, nodeName)
+							.tag(TestStartEndMeasurement.Tags.RUN_ID, runId)
+							.tag(TestStartEndMeasurement.Tags.TEST_NAME, testName)
+							.addField(TestStartEndMeasurement.Fields.PLACEHOLDER,"1")
+							.build());
+
+			LOGGER.info("Thread Group changed, " + tg_name + " started");	
+			old_tg_number = tg_number;
+			old_tg_name = tg_name;	
+			}					
 		} catch (Exception e) {
 			LOGGER.error("Failed writing to influx", e);
 		}
