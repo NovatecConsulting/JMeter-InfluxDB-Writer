@@ -134,11 +134,15 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 				Point point = Point.measurement(RequestMeasurement.MEASUREMENT_NAME).time(
 						System.currentTimeMillis() * ONE_MS_IN_NANOSECONDS + getUniqueNumberForTheSamplerThread(), TimeUnit.NANOSECONDS)
 						.tag(RequestMeasurement.Tags.REQUEST_NAME, sampleResult.getSampleLabel())
-                                                .addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
+						.tag(RequestMeasurement.Tags.RESPONSE_CODE, sampleResult.getSampleLabel())
+                        .addField(RequestMeasurement.Fields.ERROR_COUNT, sampleResult.getErrorCount())
 						.addField(RequestMeasurement.Fields.THREAD_NAME, sampleResult.getThreadName())
 						.tag(RequestMeasurement.Tags.RUN_ID, runId)
 						.tag(RequestMeasurement.Tags.TEST_NAME, testName)
 						.addField(RequestMeasurement.Fields.NODE_NAME, nodeName)
+						.addField(RequestMeasurement.Fields.RESPONSE_BYTES, sampleResult.getBytesAsLong())
+						.addField(RequestMeasurement.Fields.RESPONSE_LATENCY, sampleResult.getLatency())
+						.addField(RequestMeasurement.Fields.CONNECT_TIME, sampleResult.getConnectTime())
 						.addField(RequestMeasurement.Fields.RESPONSE_TIME, sampleResult.getTime()).build();
 				influxDB.write(influxDBConfig.getInfluxDatabase(), influxDBConfig.getInfluxRetentionPolicy(), point);
 			}
@@ -159,7 +163,7 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 		arguments.addArgument(InfluxDBConfig.KEY_RETENTION_POLICY, InfluxDBConfig.DEFAULT_RETENTION_POLICY);
 		arguments.addArgument(KEY_SAMPLERS_LIST, ".*");
 		arguments.addArgument(KEY_USE_REGEX_FOR_SAMPLER_LIST, "true");
-		arguments.addArgument(KEY_RECORD_SUB_SAMPLES, "true");
+		arguments.addArgument(KEY_RECORD_SUB_SAMPLES, "false");
 		return arguments;
 	}
 
@@ -169,7 +173,6 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
                 runId = context.getParameter(KEY_RUN_ID,"R001"); //Will be used to compare performance of R001, R002, etc of 'Test'
 		randomNumberGenerator = new Random();
 		nodeName = context.getParameter(KEY_NODE_NAME, "Test-Node");
-
 
 		setupInfluxClient(context);
 		influxDB.write(
