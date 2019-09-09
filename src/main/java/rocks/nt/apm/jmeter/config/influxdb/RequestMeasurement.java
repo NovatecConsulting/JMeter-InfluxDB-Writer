@@ -70,6 +70,8 @@ public interface RequestMeasurement {
 		String RESPONSE_LATENCY = "responseLatency";
 		
 		String CONNECT_TIME = "connectTime";
+
+		String DOWNLOAD_TIME = "downloadTime";
 		
 		
 	}
