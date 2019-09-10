@@ -241,8 +241,8 @@ public class JMeterInfluxDBBackendListenerClient extends AbstractBackendListener
 			addVirtualUsersMetrics(getUserMetrics().getMinActiveThreads(), getUserMetrics().getMeanActiveThreads(), getUserMetrics().getMaxActiveThreads(), tc.startedThreads, tc.finishedThreads);
 			//check status of thread group
 			//AbstractThreadGroup threadGroup = JMeterContextService.getContext().getThreadGroup();
-			String tg_name = JMeterUtils.getProperty("tg_name");
-			int tg_number = Integer.valueOf(JMeterUtils.getProperty("tg_number"));
+			String tg_name = JMeterUtils.getPropDefault("tg_name","firstThreadGroup");
+			int tg_number = Integer.valueOf(JMeterUtils.getPropDefault("tg_number", "1"));
 			
 			if (!tg_name.equals(old_tg_name) && tg_number > old_tg_number)
 			{
