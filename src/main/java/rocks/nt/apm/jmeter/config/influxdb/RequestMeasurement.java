@@ -72,6 +72,8 @@ public interface RequestMeasurement {
 		String CONNECT_TIME = "connectTime";
 
 		String DOWNLOAD_TIME = "downloadTime";
+
+		String PROCESSING_TIME = "processingTime";
 		
 		
 	}
