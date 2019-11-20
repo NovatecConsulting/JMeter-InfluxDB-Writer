@@ -23,9 +23,9 @@ public interface VirtualUsersMeasurement {
 		/**
 		 * Node name field
 		 */
-		String NODE_NAME = "nodeName";
+		String NODE_NAME = "env";
 
-		String TEST_NAME = "testName";
+		String TEST_NAME = "component";
 
 		String RUN_ID = "runId";
 

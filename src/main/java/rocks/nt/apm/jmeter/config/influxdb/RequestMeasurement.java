@@ -25,17 +25,23 @@ public interface RequestMeasurement {
 		 */
 		String REQUEST_NAME = "requestName";
 		
-		String RESPONSE_CODE = "requestName";
+		String RESPONSE_CODE = "responseCode";
 
                 /** 
                  * Influx DB tag for a unique identifier for each execution(aka 'run') of a load test.
+				 * NOT USED
                  */  
                 String RUN_ID = "runId";
 
                 /** 
                  * Test name field
                  */  
-                String TEST_NAME = "testName";
+				String TEST_NAME = "component";
+			/**
+		 * Node name field
+		 */
+		String NODE_NAME = "env";
+
 	}
 
 	/**
@@ -60,11 +66,6 @@ public interface RequestMeasurement {
 		 */
 		String THREAD_NAME = "threadName";
 
-		/**
-		 * Node name field
-		 */
-		String NODE_NAME = "nodeName";
-		
 		String RESPONSE_BYTES = "responseBytes";
 		
 		String RESPONSE_LATENCY = "responseLatency";
